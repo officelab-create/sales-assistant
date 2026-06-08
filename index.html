@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SalesFlow Pro - 営業フロー管理</title>
+  <meta name="description" content="営業と内務のシームレスな連携・案件フロー管理アプリ">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="container" style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    <div class="glass-panel fade-in" style="width: 100%; max-width: 400px;">
+      <h2 style="text-align: center; margin-bottom: 1.5rem;" class="brand">SalesFlow Pro</h2>
+      <div id="login-error" style="display:none; background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; font-size: 0.875rem;">
+        IDまたはパスワードが間違っています。
+      </div>
+      <form id="login-form" onsubmit="return handleLogin(event)">
+        <div class="form-group">
+          <label for="login-id">ユーザーID</label>
+          <input type="text" id="login-id" class="form-control" required placeholder="例: aizu" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">パスワード</label>
+          <input type="password" id="password" class="form-control" required placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          ログイン
+        </button>
+      </form>
+      <div style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary);">
+        ※指定されたIDとパスワードでログインしてください。
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Screen -->
+  <div id="app-screen" class="hidden fade-in">
+    <header class="glass-panel" style="margin: 1rem 1rem 2rem 1rem; border-radius: 100px; padding: 0.75rem 2rem;">
+      <div class="brand">SalesFlow Pro</div>
+      <div class="nav-actions" style="display: flex; gap: 0.75rem; align-items: center;">
+        <span id="user-role" style="font-size: 0.8rem; font-weight: 600; background: var(--accent-color); color: white; padding: 0.25rem 0.75rem; border-radius: 100px; white-space: nowrap;"></span>
+        <button id="theme-toggle" title="テーマ切り替え" onclick="toggleTheme()">🌙</button>
+        <button id="logout-btn" title="ログアウト" onclick="handleLogout()">🚪</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Dashboard -->
+      <section id="dashboard">
+        <div class="dashboard-grid">
+          <div class="glass-panel stat-card">
+            <h3>📋 進行中の案件</h3>
+            <div class="value" id="active-projects-count">0</div>
+          </div>
+          <div class="glass-panel stat-card">
+            <h3>📈 成約率 (今月)</h3>
+            <div class="value" id="win-rate">0%</div>
+          </div>
+          <div class="glass-panel stat-card">
+            <h3>⚠️ 自分のタスク (確認待ち)</h3>
+            <div class="value" id="pending-tasks-count" style="color: var(--danger-color);">0</div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid" style="grid-template-columns: 2fr 1fr;">
+          <div class="glass-panel">
+            <h3 style="margin-bottom: 1rem;">商談数・受注数 推移</h3>
+            <div style="position: relative; width: 100%; height: 160px;">
+              <canvas id="performanceChart"></canvas>
+            </div>
+          </div>
+          <div class="glass-panel">
+            <h3 style="margin-bottom: 1rem;">最近の活動</h3>
+            <div id="activity-feed" style="font-size: 0.875rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <p style="color: var(--text-secondary);">まだ活動履歴はありません</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects Flow -->
+      <section id="projects" style="margin-top: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2>案件フロー管理</h2>
+          <button id="new-project-btn" class="btn btn-primary" onclick="handleNewProject()">
+            ＋ 新規案件
+          </button>
+        </div>
+        
+        <div class="glass-panel project-list" id="project-list-container">
+          <!-- Projects injected by JS -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Project Modal -->
+  <div id="project-modal" class="modal-backdrop hidden">
+    <div class="glass-panel modal-content fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 id="modal-title">案件詳細</h2>
+        <button onclick="closeModal()" style="background: none; border: none; cursor: pointer; color: var(--text-primary); font-size: 1.5rem;">✕</button>
+      </div>
+      
+      <div class="form-group">
+        <label>顧客名 / 企業名</label>
+        <input type="text" id="proj-customer" class="form-control" placeholder="例: 株式会社サンプル">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>顧客No</label>
+          <input type="text" id="proj-customer-no" class="form-control" placeholder="例: C-001">
+        </div>
+        <div class="form-group">
+          <label>見積No (販売大臣のNo)</label>
+          <input type="text" id="proj-quote-no" class="form-control" placeholder="例: Q-2023-001">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>確度 (角度)</label>
+        <select id="proj-probability" class="form-control">
+          <option value="A">A (80%~) - 高確度</option>
+          <option value="B">B (50%~) - 中確度</option>
+          <option value="C" selected>C (30%~) - 低確度</option>
+          <option value="D">D (~30%) - 未定</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>商談メモ・チャット (不明点や連絡事項)</label>
+        <div id="chat-messages" style="background: rgba(0,0,0,0.05); padding: 1rem; border-radius: 8px; height: 150px; overflow-y: auto; margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+          <p style="color: var(--text-secondary);">メモはまだありません</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="chat-input" class="form-control" placeholder="メモを入力..." onkeydown="if(event.key==='Enter'){sendChat();}">
+          <button class="btn btn-primary" onclick="sendChat()">送信</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>関連ファイル (PDF等)</label>
+        <div id="dropzone" class="dropzone">
+          <p style="font-size: 2rem; margin-bottom: 0.5rem;">📎</p>
+          <p>ここにPDFをドラッグ＆ドロップ、またはクリックして選択</p>
+          <input type="file" id="file-input" style="display:none;" accept=".pdf">
+        </div>
+        <div id="file-list" style="margin-top: 0.5rem; font-size: 0.875rem; display: flex; flex-direction: column; gap: 0.25rem;"></div>
+      </div>
+
+      <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
+        <button class="btn" style="background: var(--success-color); color: white;" onclick="generateFollowMail()">
+          ✉️ フォローメール自動生成
+        </button>
+        <button class="btn btn-primary" onclick="saveProject()">
+          💾 保存して閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden" style="position: fixed; bottom: 20px; right: 20px; background: var(--success-color); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: var(--shadow); z-index: 2000; font-weight: 600;">
+    保存しました
+  </div>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Main App Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>
