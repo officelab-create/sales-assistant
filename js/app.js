@@ -6,9 +6,8 @@
 // ⚠️ お客様へのお願い ⚠️
 // 以下の2行に、Supabaseで作成したプロジェクトの「URL」と「anon key」を貼り付けてください。
 // ----------------------------------------------------
-var SUPABASE_URL = 'YOUR_SUPABASE_URL';
-var SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
-
+var SUPABASE_URL = 'https://gpkmgcbmmefsjoqbgidi.supabase.co';
+sb_secret_IkkzkUoDuE47GAQ_T6lqlw_TIIqKhPa
 var supabase = null;
 if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && typeof window.supabase !== 'undefined') {
   supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
